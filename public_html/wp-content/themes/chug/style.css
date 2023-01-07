@@ -1,0 +1,363 @@
+/*
+Theme Name: C.H.U.G.
+Author: Thomas Marshall
+Version: 1.0
+*/
+
+@import url('fonts/museo-slab/stylesheet.css');
+
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td,article,aside,canvas,details,embed,figure,figcaption,footer,header,hgroup,menu,nav,output,ruby,section,summary,time,mark,audio,video{margin:0;padding:0;border:0;font-size:100%;font:inherit;vertical-align:baseline}article,aside,details,figcaption,figure,footer,header,hgroup,menu,nav,section{display:block}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}table{border-collapse:collapse;border-spacing:0}
+
+body {
+  background: #fafafa;
+  font-family: helvetica, arial, sans-serif;
+  font-size: 13px;
+  line-height: 16px;
+  font-weight: 300;
+}
+
+#facebook {
+	display: block;
+	margin-top: 15px;
+}
+
+#what-is-chug h2 {
+  padding-left: 32px;
+  background: url('img/duck.png') no-repeat top left;
+}
+
+#initiatives-sustainability h2 {
+  padding-left: 40px;
+  background: url('img/can.png') no-repeat top left;
+}
+
+#tinyletter {
+	margin-top: 15px;
+	display: block;
+}
+
+#community-events h2 {
+  padding-left: 48px;
+  background: url('img/flags.png') no-repeat top left;
+}
+
+.top {
+  background: #fafafa url('img/bg1.png') no-repeat center left;
+  -webkit-background-size: cover;
+  -moz-background-size: cover;
+  -o-background-size: cover;
+  background-size: cover;
+}
+
+#header h1:hover {
+  background: url('img/logo-col.png?a') no-repeat;
+}
+
+.main .inner {
+  overflow: visible;
+  position: relative;
+}
+
+.important a {
+  font-weight: bold;
+  background: yellow;
+}
+
+#award {
+  position: absolute;
+  top: 0;
+  right: -100px;
+  top: -75px;
+  z-index: 999;
+}
+
+#footer {
+  width: 940px;
+padding: 20px 0;
+  margin: 0 auto;
+  clear: both;
+  overflow: hidden;
+}
+
+.footer-left, .footer-right {
+  width: 450px;
+  float: left;
+}
+
+.footer-right {
+  margin-left: 40px;
+  text-align: right;
+}
+
+
+#header h1:hover img {
+  opacity: 0;
+}
+
+#header h1 {
+  width: 162px;
+}
+
+h1 a {
+  text-decoration: none;
+}
+
+.post-date {
+  font-style: italic;
+}
+
+.inner {
+  clear: both;
+  overflow: hidden;
+}
+
+article.page {
+  float: left;
+  width: 620px;
+}
+
+.post + .post, h1 + .post {
+  margin-top: 40px;
+}
+
+.posts-nav {
+  margin-top: 40px;
+}
+
+.sidebar h2 {
+  font-family: 'MuseoSlab500', helvetica, arial, sans-serif;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+  border-bottom: 1px dotted #fafafa;
+}
+
+.gallery a {
+  display: block;
+  float: left;
+  width: 75px;
+  height: 75px;
+}
+
+.gallery > div {
+  clear: both;
+  overflow: hidden;
+}
+
+.gallery a img {
+  display: block;
+}
+
+a {
+  color: black;
+}
+
+ul.links li {
+  list-style-type: disc;
+  list-style-position: inside;
+}
+
+* + p {
+  margin-top: 1em;
+}
+
+#news {
+  float: left;
+  width: 620px;
+}
+
+strong {
+  font-weight: bold;
+}
+
+.page header h1, .post header h1, #news > h1 {
+  font-family: 'MuseoSlab500', helvetica, arial, sans-serif;
+  font-size: 21px;
+  padding-bottom: 15px;
+  margin-bottom: 15px;
+  border-bottom: 1px solid #fafafa;
+}
+
+aside.sidebar {
+  float: left;
+  margin-left: 95px;
+  width: 225px;
+}
+
+.sidebar > div {
+  margin-bottom: 20px;
+}
+
+.main {
+  background: white;
+  -webkit-box-shadow: 0px 0px 1px 1px rgba(0, 0, 0, 0.05);
+  -moz-box-shadow: 0px 0px 1px 1px rgba(0, 0, 0, 0.05);
+  box-shadow: 0px 0px 1px 1px rgba(0, 0, 0, 0.05);
+}
+
+.main > * {
+  min-height: 480px;
+  margin: 0 auto;
+  width: 940px;
+}
+
+.top .inner {
+  margin: 0 auto 0;
+  padding-top: 20px;
+  width: 940px;
+  position: relative;
+}
+
+#header h1 img {
+  height: 100px;
+}
+
+#nav {
+  font-family: 'MuseoSlab500', helvetica, arial, sans-serif;
+  margin-top: 20px;
+}
+
+#nav ul {
+  clear: both;
+  overflow: hidden;
+}
+
+#nav li {
+  float: left;
+  margin-right: 3px;
+}
+
+#nav li.current-menu-item a {
+  background: white;
+  border-bottom: 1px solid #ffffff;
+}
+
+#nav li a {
+  background: #fdfdfd;
+  border-bottom: 1px solid #fafafa;
+  color: black;
+  text-decoration: none;
+  display: block;
+  padding: 5px 10px 4px;
+  margin-top: 3px;
+  -moz-border-radius-topleft: 6px;
+  -moz-border-radius-topright: 6px;
+  -moz-border-radius-bottomright: 0px;
+  -moz-border-radius-bottomleft: 0px;
+  -webkit-border-radius: 6px 6px 0px 0px;
+  border-radius: 6px 6px 0px 0px;
+  -webkit-box-shadow: 0px 0px 1px 1px rgba(0, 0, 0, 0.025);
+  -moz-box-shadow: 0px 0px 1px 1px rgba(0, 0, 0, 0.025);
+  box-shadow: 0px 0px 1px 1px rgba(0, 0, 0, 0.025);
+}
+
+#mission-statement {
+  position: absolute;
+  font-family: 'MuseoSlab500', helvetica, arial, sans-serif;
+  top: 0;
+  left: 200px;
+  padding-top: 25px;
+  font-size: 21px;
+  line-height: 1.25em;
+}
+
+.row {
+  clear: both;
+  overflow: hidden;
+  padding: 40px 0;
+}
+
+.row + .row {
+  padding-top: 0;
+}
+
+.column {
+  width: 300px;
+  float: left;
+}
+
+.column h2 {
+  font-family: 'MuseoSlab500', helvetica, arial, sans-serif;
+  font-size: 18px;
+  padding-bottom: 9px;
+  margin-bottom: 9px;
+  border-bottom: 1px solid #fafafa;
+}
+
+.column + .column {
+  margin-left: 20px;
+}
+
+
+#slider {
+  overflow: hidden !important;
+  background: #fafafa;
+  float: left;
+  height: 320px;
+  width: 620px;
+  white-space: nowrap;
+  position: relative;
+}
+
+.slide {
+  overflow: hidden;
+  display: inline-block;
+  background: #fafafa;
+  height: 320px;
+  width: 620px;
+  position: relative;
+}
+
+.slide {display:inline-block;}
+* html .slide {display:inline;}
+* + html .slide {display:inline;}
+
+.slide .caption {
+  font-family: 'MuseoSlab500', helvetica, arial, sans-serif;
+  color: white;
+  display: block;
+  text-decoration: none;
+  padding: 10px;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgb(0,0,0);
+  background: rgba(0,0,0,0.85);
+}
+
+#recent-news h2 {
+  font-family: 'MuseoSlab500', helvetica, arial, sans-serif;
+  font-size: 18px;
+  margin-bottom: 9px;
+  padding-bottom: 9px;
+  border-bottom: 1px solid #fafafa;
+}
+
+#recent-news {
+  margin-left: 20px;
+  width: 300px;
+  float: left;
+  height: 320px;
+}
+
+.news-title {
+  font-family: 'MuseoSlab500', helvetica, arial, sans-serif;
+  display: block;
+  margin-bottom: 10px;
+}
+
+.news-item {
+  display: block;
+  text-decoration: none;
+  color: black;
+}
+
+.news-item + .news-item {
+  margin-top: 9px;
+  padding-top: 9px;
+  border-top: 1px dotted #fafafa;
+}
+
+.bottom {
+  padding: 20px;
+}
