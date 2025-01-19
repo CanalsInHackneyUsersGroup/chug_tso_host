@@ -38,26 +38,32 @@
     }
 
     $related_links = get_field('link');
-    if (!empty($related_links)) {
+    if (is_array($related_links) && !empty($related_links)) {
       echo '<div class="links">';
       echo '<h2>Related Links</h2>';
       echo '<ul class="links">';
       foreach ($related_links as $link) {
-        echo '<li><a target="_blank" href="http://'.$link['url'].'">'.$link['text'].'</a></li>';
+        if (isset($link['url']) && isset($link['text'])) {
+          echo '<li><a target="_blank" href="'.esc_url($link['url']).'">'.esc_html($link['text']).'</a></li>';
+        }
       }
       echo '</ul>';
       echo '</div>';
     }
     
     $images = get_field('image');
-    if (!empty($images)) {
+    if (is_array($images) && !empty($images)) {
       echo '<div class="gallery">';
       echo '<h2>Gallery</h2>';
       echo '<div>';
       foreach ($images as $image) {
-        $thumbnail = wp_get_attachment_image_src($image['image'], 'thumbnail');
-        $large = wp_get_attachment_image_src($image['image'], 'large');
-        echo '<a href="'.$large[0].'" rel="gallery"><img src="'.$thumbnail[0].'"/></a>';
+        if (isset($image['image']) && is_numeric($image['image'])) {
+          $thumbnail = wp_get_attachment_image_src($image['image'], 'thumbnail');
+          $large = wp_get_attachment_image_src($image['image'], 'large');
+          if ($thumbnail && $large) {
+            echo '<a href="'.esc_url($large[0]).'" rel="gallery"><img src="'.esc_url($thumbnail[0]).'" alt="" /></a>';
+          }
+        }
       }
       echo '</div>';
       echo '</div>';

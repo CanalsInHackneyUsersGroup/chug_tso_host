@@ -2,6 +2,17 @@
 
 require "lib/markdown/markdown.php";
 
+add_action('admin_menu', 'force_plugins_menu', 99);
+function force_plugins_menu() {
+    add_menu_page(
+        'Plugins',
+        'Plugins',
+        'activate_plugins',
+        'plugins.php'
+    );
+}
+
+
 add_action('init','register_custom_menu');
 function register_custom_menu(){
   register_nav_menu('custom_menu',__('Custom Menu'));

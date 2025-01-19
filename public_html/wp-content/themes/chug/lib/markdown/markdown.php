@@ -319,40 +319,42 @@ class Markdown_Parser {
 		);
 
 
-	function stripLinkDefinitions($text) {
-	#
-	# Strips link definitions from text, stores the URLs and titles in
-	# hash references.
-	#
-		$less_than_tab = $this->tab_width - 1;
+	protected function stripLinkDefinitions($text) {
+    if (!is_string($text)) {
+        return '';
+    }
 
-		# Link defs are in the form: ^[id]: url "optional title"
-		$text = preg_replace_callback('{
-							^[ ]{0,'.$less_than_tab.'}\[(.+)\][ ]?:	# id = $1
-							  [ ]*
-							  \n?				# maybe *one* newline
-							  [ ]*
-							(?:
-							  <(.+?)>			# url = $2
-							|
-							  (\S+?)			# url = $3
-							)
-							  [ ]*
-							  \n?				# maybe one newline
-							  [ ]*
-							(?:
-								(?<=\s)			# lookbehind for whitespace
-								["(]
-								(.*?)			# title = $4
-								[")]
-								[ ]*
-							)?	# title is optional
-							(?:\n+|\Z)
-			}xm',
-			array(&$this, '_stripLinkDefinitions_callback'),
-			$text);
-		return $text;
-	}
+    $less_than_tab = $this->tab_width - 1;
+
+    # Link defs are in the form: ^[id]: url "optional title"
+    $text = preg_replace_callback('{
+        ^[ ]{0,'.$less_than_tab.'}\[(.+)\][ ]?:    # id = $1
+          [ ]*
+          \n?                # maybe *one* newline
+          [ ]*
+        (?:
+          <(.+?)>           # url = $2
+        |
+          (\S+?)            # url = $3
+        )
+          [ ]*
+          \n?               # maybe one newline
+          [ ]*
+        (?:
+            (?<=\s)         # lookbehind for whitespace
+            ["(]
+            (.*?)           # title = $4
+            [")]
+            [ ]*
+        )?    # title is optional
+        (?:\n+|\Z)
+        }xm',
+        array($this, '_stripLinkDefinitions_callback'),
+        $text
+    );
+
+    return $text;
+}
 	function _stripLinkDefinitions_callback($matches) {
 		$link_id = strtolower($matches[1]);
 		$url = $matches[2] == '' ? $matches[3] : $matches[2];
@@ -362,143 +364,91 @@ class Markdown_Parser {
 	}
 
 
-	function hashHTMLBlocks($text) {
-		if ($this->no_markup)  return $text;
+protected function hashHTMLBlocks($text) {
+    if (!is_string($text)) {
+        return '';
+    }
 
-		$less_than_tab = $this->tab_width - 1;
+    if ($this->no_markup) {
+        return $text;
+    }
 
-		# Hashify HTML blocks:
-		# We only want to do this for block-level HTML tags, such as headers,
-		# lists, and tables. That's because we still want to wrap <p>s around
-		# "paragraphs" that are wrapped in non-block-level tags, such as anchors,
-		# phrase emphasis, and spans. The list of tags we're looking for is
-		# hard-coded:
-		#
-		# *  List "a" is made of tags which can be both inline or block-level.
-		#    These will be treated block-level when the start tag is alone on 
-		#    its line, otherwise they're not matched here and will be taken as 
-		#    inline later.
-		# *  List "b" is made of tags which are always block-level;
-		#
-		$block_tags_a_re = 'ins|del';
-		$block_tags_b_re = 'p|div|h[1-6]|blockquote|pre|table|dl|ol|ul|address|'.
-						   'script|noscript|form|fieldset|iframe|math';
+    $less_than_tab = $this->tab_width - 1;
 
-		# Regular expression for the content of a block tag.
-		$nested_tags_level = 4;
-		$attr = '
-			(?>				# optional tag attributes
-			  \s			# starts with whitespace
-			  (?>
-				[^>"/]+		# text outside quotes
-			  |
-				/+(?!>)		# slash not followed by ">"
-			  |
-				"[^"]*"		# text inside double quotes (tolerate ">")
-			  |
-				\'[^\']*\'	# text inside single quotes (tolerate ">")
-			  )*
-			)?	
-			';
-		$content =
-			str_repeat('
-				(?>
-				  [^<]+			# content without tag
-				|
-				  <\2			# nested opening tag
-					'.$attr.'	# attributes
-					(?>
-					  />
-					|
-					  >', $nested_tags_level).	# end of opening tag
-					  '.*?'.					# last level nested tag content
-			str_repeat('
-					  </\2\s*>	# closing nested tag
-					)
-				  |				
-					<(?!/\2\s*>	# other tags with a different name
-				  )
-				)*',
-				$nested_tags_level);
-		$content2 = str_replace('\2', '\3', $content);
+    # Block tags requiring separate handling
+    $block_tags_a = 'ins|del';
+    $block_tags_b = 'p|div|h[1-6]|blockquote|pre|table|dl|ol|ul|address|'.
+                    'script|noscript|form|fieldset|iframe|math';
 
-		# First, look for nested blocks, e.g.:
-		# 	<div>
-		# 		<div>
-		# 		tags for inner block must be indented.
-		# 		</div>
-		# 	</div>
-		#
-		# The outermost tags must start at the left margin for this to match, and
-		# the inner nested divs must be indented.
-		# We need to do this before the next, more liberal match, because the next
-		# match will start at the first `<div>` and stop at the first `</div>`.
-		$text = preg_replace_callback('{(?>
-			(?>
-				(?<=\n\n)		# Starting after a blank line
-				|				# or
-				\A\n?			# the beginning of the doc
-			)
-			(						# save in $1
+    # Regular expression for the content of a block tag.
+    $nested_tags_level = 4;
+    
+    # Build attribute pattern safely
+    $attr = '
+        (?>             # optional tag attributes
+          \s           # starts with whitespace
+          (?>
+            [^>"/]+        # text outside quotes
+          |
+            /+(?!>)        # slash not followed by ">"
+          |
+            "[^"]*"       # text inside double quotes (tolerate ">")
+          |
+            \'[^\']*\'     # text inside single quotes (tolerate ">")
+          )*
+        )?    
+        ';
+    
+    # Build content pattern
+    $content_pattern = str_repeat('
+        (?>
+          [^<]+           # content without tag
+        |
+          <\2            # nested opening tag
+            '.$attr.'    # attributes
+            (?>
+              />
+            |
+              >', $nested_tags_level).    # end of opening tag
+              '.*?'.                    # last level nested tag content
+        str_repeat('
+              </\2\s*>    # closing nested tag
+            )
+          |             
+            <(?!/\2\s*>    # other tags with a different name
+          )
+        )*',
+        $nested_tags_level);
 
-			  # Match from `\n<tag>` to `</tag>\n`, handling nested tags 
-			  # in between.
-					
-						[ ]{0,'.$less_than_tab.'}
-						<('.$block_tags_b_re.')# start tag = $2
-						'.$attr.'>			# attributes followed by > and \n
-						'.$content.'		# content, support nesting
-						</\2>				# the matching end tag
-						[ ]*				# trailing spaces/tabs
-						(?=\n+|\Z)	# followed by a newline or end of document
+    $content2 = str_replace('\2', '\3', $content_pattern);
 
-			| # Special version for tags of group a.
+    # First, handle nested blocks
+    $text = preg_replace_callback('{
+        (?:\n\n|\A\n?)
+        (                   # $1 = the code block
+          (?:
+            (?<=\n\n)     # Starting after a blank line
+            |             # or
+            \A\n?         # the beginning of the doc
+          )
+          (               # $2
+            [ ]{0,'.$less_than_tab.'}
+            (?:
+              <('.$block_tags_b.')  # $3 = Opening tag
+              '.$attr.'>.+?</\3>    # tag content
+              [ ]*                  # trailing spaces/tabs
+              (?=\n+|\Z)    # followed by a newline or end of document
+            )
+          )
+        )
+        }xs',
+        array($this, '_hashHTMLBlocks_callback'),
+        $text
+    );
 
-						[ ]{0,'.$less_than_tab.'}
-						<('.$block_tags_a_re.')# start tag = $3
-						'.$attr.'>[ ]*\n	# attributes followed by >
-						'.$content2.'		# content, support nesting
-						</\3>				# the matching end tag
-						[ ]*				# trailing spaces/tabs
-						(?=\n+|\Z)	# followed by a newline or end of document
-					
-			| # Special case just for <hr />. It was easier to make a special 
-			  # case than to make the other regex more complicated.
-			
-						[ ]{0,'.$less_than_tab.'}
-						<(hr)				# start tag = $2
-						'.$attr.'			# attributes
-						/?>					# the matching end tag
-						[ ]*
-						(?=\n{2,}|\Z)		# followed by a blank line or end of document
-			
-			| # Special case for standalone HTML comments:
-			
-					[ ]{0,'.$less_than_tab.'}
-					(?s:
-						<!-- .*? -->
-					)
-					[ ]*
-					(?=\n{2,}|\Z)		# followed by a blank line or end of document
-			
-			| # PHP and ASP-style processor instructions (<? and <%)
-			
-					[ ]{0,'.$less_than_tab.'}
-					(?s:
-						<([?%])			# $2
-						.*?
-						\2>
-					)
-					[ ]*
-					(?=\n{2,}|\Z)		# followed by a blank line or end of document
-					
-			)
-			)}Sxmi',
-			array(&$this, '_hashHTMLBlocks_callback'),
-			$text);
-
-		return $text;
-	}
+    return $text;
+}
+	
 	function _hashHTMLBlocks_callback($matches) {
 		$text = $matches[1];
 		$key  = $this->hashBlock($text);
@@ -907,7 +857,7 @@ class Markdown_Parser {
 		if ($matches[2] == '-' && preg_match('{^-(?: |$)}', $matches[1]))
 			return $matches[0];
 		
-		$level = $matches[2]{0} == '=' ? 1 : 2;
+		$level = $matches[2][0] == '=' ? 1 : 2;
 		$block = "<h$level>".$this->runSpanGamut($matches[1])."</h$level>";
 		return "\n" . $this->hashBlock($block) . "\n\n";
 	}
@@ -918,72 +868,67 @@ class Markdown_Parser {
 	}
 
 
-	function doLists($text) {
-	#
-	# Form HTML ordered (numbered) and unordered (bulleted) lists.
-	#
-		$less_than_tab = $this->tab_width - 1;
+protected function doLists($text) {
+    if (!is_string($text) || empty($text)) {
+        return '';
+    }
 
-		# Re-usable patterns to match list item bullets and number markers:
-		$marker_ul_re  = '[*+-]';
-		$marker_ol_re  = '\d+[.]';
-		$marker_any_re = "(?:$marker_ul_re|$marker_ol_re)";
+    $less_than_tab = $this->tab_width - 1;
 
-		$markers_relist = array(
-			$marker_ul_re => $marker_ol_re,
-			$marker_ol_re => $marker_ul_re,
-			);
+    # Re-usable patterns
+    $marker_ul = '[*+-]';
+    $marker_ol = '\d+[.]';
+    $marker_any = "(?:$marker_ul|$marker_ol)";
 
-		foreach ($markers_relist as $marker_re => $other_marker_re) {
-			# Re-usable pattern to match any entirel ul or ol list:
-			$whole_list_re = '
-				(								# $1 = whole list
-				  (								# $2
-					([ ]{0,'.$less_than_tab.'})	# $3 = number of spaces
-					('.$marker_re.')			# $4 = first list item marker
-					[ ]+
-				  )
-				  (?s:.+?)
-				  (								# $5
-					  \z
-					|
-					  \n{2,}
-					  (?=\S)
-					  (?!						# Negative lookahead for another list item marker
-						[ ]*
-						'.$marker_re.'[ ]+
-					  )
-					|
-					  (?=						# Lookahead for another kind of list
-					    \n
-						\3						# Must have the same indentation
-						'.$other_marker_re.'[ ]+
-					  )
-				  )
-				)
-			'; // mx
-			
-			# We use a different prefix before nested lists than top-level lists.
-			# See extended comment in _ProcessListItems().
-		
-			if ($this->list_level) {
-				$text = preg_replace_callback('{
-						^
-						'.$whole_list_re.'
-					}mx',
-					array(&$this, '_doLists_callback'), $text);
-			}
-			else {
-				$text = preg_replace_callback('{
-						(?:(?<=\n)\n|\A\n?) # Must eat the newline
-						'.$whole_list_re.'
-					}mx',
-					array(&$this, '_doLists_callback'), $text);
-			}
-		}
+    $markers = array(
+        $marker_ul => $marker_ol,
+        $marker_ol => $marker_ul,
+    );
 
-		return $text;
-	}
+    foreach ($markers as $marker => $other_marker) {
+        # Re-usable pattern for list
+        $whole_list_pattern = '
+            (                               # $1 = whole list
+              (                            # $2
+                ([ ]{0,'.$less_than_tab.'}) # $3 = number of spaces
+                ('.$marker.')              # $4 = first list item marker
+                [ ]+
+              )
+              (?s:.+?)
+              (                            # $5
+                  \z
+                |
+                  \n{2,}
+                  (?=\S)
+                  (?!                      # Negative lookahead for another marker
+                    [ ]*
+                    '.$marker.'[ ]+
+                  )
+                |
+                  (?=                     # Lookahead for another kind of list
+                    \n
+                    \3                    # Same indent
+                    '.$other_marker.'[ ]+
+                  )
+              )
+            )
+        ';
+
+        if ($this->list_level) {
+            $pattern = '/^'.$whole_list_pattern.'/mx';
+        } else {
+            $pattern = '/(?:(?<=\n)\n|\A\n?)'.$whole_list_pattern.'/mx';
+        }
+
+        $text = preg_replace_callback($pattern, 
+            array($this, '_doLists_callback'), 
+            $text
+        );
+    }
+
+    return $text;
+}
+	
 	function _doLists_callback($matches) {
 		# Re-usable patterns to match list item bullets and number markers:
 		$marker_ul_re  = '[*+-]';
@@ -1156,126 +1101,150 @@ class Markdown_Parser {
 	}
 	
 	function doItalicsAndBold($text) {
-		$token_stack = array('');
-		$text_stack = array('');
-		$em = '';
-		$strong = '';
-		$tree_char_em = false;
-		
-		while (1) {
-			#
-			# Get prepared regular expression for seraching emphasis tokens
-			# in current context.
-			#
-			$token_re = $this->em_strong_prepared_relist["$em$strong"];
-			
-			#
-			# Each loop iteration search for the next emphasis token. 
-			# Each token is then passed to handleSpanToken.
-			#
-			$parts = preg_split($token_re, $text, 2, PREG_SPLIT_DELIM_CAPTURE);
-			$text_stack[0] .= $parts[0];
-			$token =& $parts[1];
-			$text =& $parts[2];
-			
-			if (empty($token)) {
-				# Reached end of text span: empty stack without emitting.
-				# any more emphasis.
-				while ($token_stack[0]) {
-					$text_stack[1] .= array_shift($token_stack);
-					$text_stack[0] .= array_shift($text_stack);
-				}
-				break;
-			}
-			
-			$token_len = strlen($token);
-			if ($tree_char_em) {
-				# Reached closing marker while inside a three-char emphasis.
-				if ($token_len == 3) {
-					# Three-char closing marker, close em and strong.
-					array_shift($token_stack);
-					$span = array_shift($text_stack);
-					$span = $this->runSpanGamut($span);
-					$span = "<strong><em>$span</em></strong>";
-					$text_stack[0] .= $this->hashPart($span);
-					$em = '';
-					$strong = '';
-				} else {
-					# Other closing marker: close one em or strong and
-					# change current token state to match the other
-					$token_stack[0] = str_repeat($token{0}, 3-$token_len);
-					$tag = $token_len == 2 ? "strong" : "em";
-					$span = $text_stack[0];
-					$span = $this->runSpanGamut($span);
-					$span = "<$tag>$span</$tag>";
-					$text_stack[0] = $this->hashPart($span);
-					$$tag = ''; # $$tag stands for $em or $strong
-				}
-				$tree_char_em = false;
-			} else if ($token_len == 3) {
-				if ($em) {
-					# Reached closing marker for both em and strong.
-					# Closing strong marker:
-					for ($i = 0; $i < 2; ++$i) {
-						$shifted_token = array_shift($token_stack);
-						$tag = strlen($shifted_token) == 2 ? "strong" : "em";
-						$span = array_shift($text_stack);
-						$span = $this->runSpanGamut($span);
-						$span = "<$tag>$span</$tag>";
-						$text_stack[0] .= $this->hashPart($span);
-						$$tag = ''; # $$tag stands for $em or $strong
-					}
-				} else {
-					# Reached opening three-char emphasis marker. Push on token 
-					# stack; will be handled by the special condition above.
-					$em = $token{0};
-					$strong = "$em$em";
-					array_unshift($token_stack, $token);
-					array_unshift($text_stack, '');
-					$tree_char_em = true;
-				}
-			} else if ($token_len == 2) {
-				if ($strong) {
-					# Unwind any dangling emphasis marker:
-					if (strlen($token_stack[0]) == 1) {
-						$text_stack[1] .= array_shift($token_stack);
-						$text_stack[0] .= array_shift($text_stack);
-					}
-					# Closing strong marker:
-					array_shift($token_stack);
-					$span = array_shift($text_stack);
-					$span = $this->runSpanGamut($span);
-					$span = "<strong>$span</strong>";
-					$text_stack[0] .= $this->hashPart($span);
-					$strong = '';
-				} else {
-					array_unshift($token_stack, $token);
-					array_unshift($text_stack, '');
-					$strong = $token;
-				}
-			} else {
-				# Here $token_len == 1
-				if ($em) {
-					if (strlen($token_stack[0]) == 1) {
-						# Closing emphasis marker:
-						array_shift($token_stack);
-						$span = array_shift($text_stack);
-						$span = $this->runSpanGamut($span);
-						$span = "<em>$span</em>";
-						$text_stack[0] .= $this->hashPart($span);
-						$em = '';
-					} else {
-						$text_stack[0] .= $token;
-					}
-				} else {
-					array_unshift($token_stack, $token);
-					array_unshift($text_stack, '');
-					$em = $token;
-				}
-			}
-		}
-		return $text_stack[0];
-	}
+    // Initialize arrays if not already set
+    if (!isset($this->em_strong_prepared_relist)) {
+        $this->em_strong_prepared_relist = [];
+    }
+
+    $token_stack = array('');
+    $text_stack = array('');
+    $em = '';
+    $strong = '';
+    $tree_char_em = false;
+    
+    while (1) {
+        // Get prepared regular expression for searching emphasis tokens
+        // in current context, with null check
+        $composite_key = "$em$strong";
+        $token_re = $this->em_strong_prepared_relist[$composite_key] ?? '';
+        
+        if (empty($token_re)) {
+            // If no valid regex pattern is found, return the text as is
+            return $text;
+        }
+
+        // Each loop iteration searches for the next emphasis token. 
+        // Each token is then passed to handleSpanToken.
+        $parts = preg_split($token_re, $text, 2, PREG_SPLIT_DELIM_CAPTURE);
+        
+        if ($parts === false || !is_array($parts)) {
+            // Handle regex error or invalid split result
+            return $text;
+        }
+
+        $text_stack[0] .= $parts[0] ?? '';
+        
+        if (count($parts) < 2) {
+            // Reached end of text span: empty stack without emitting
+            // any more emphasis
+            while ($token_stack[0]) {
+                $text_stack[1] .= array_shift($token_stack);
+                $text_stack[0] .= array_shift($text_stack);
+            }
+            break;
+        }
+        
+        $token = $parts[1] ?? '';
+        $text = $parts[2] ?? '';
+
+        if (empty($token)) {
+            // Reached end of text span: empty stack without emitting
+            // any more emphasis
+            while ($token_stack[0]) {
+                $text_stack[1] .= array_shift($token_stack);
+                $text_stack[0] .= array_shift($text_stack);
+            }
+            break;
+        }
+        
+        $token_len = strlen($token);
+        if ($tree_char_em) {
+            // Reached closing marker while inside a three-char emphasis
+            if ($token_len == 3) {
+                // Three-char closing marker, close em and strong
+                array_shift($token_stack);
+                $span = array_shift($text_stack);
+                $span = $this->runSpanGamut($span);
+                $span = "<strong><em>$span</em></strong>";
+                $text_stack[0] .= $this->hashPart($span);
+                $em = '';
+                $strong = '';
+            } else {
+                // Other closing marker: close one em or strong and
+                // change current token state to match the other
+                $token_stack[0] = str_repeat($token[0], 3-$token_len);
+                $tag = $token_len == 2 ? "strong" : "em";
+                $span = $text_stack[0];
+                $span = $this->runSpanGamut($span);
+                $span = "<$tag>$span</$tag>";
+                $text_stack[0] = $this->hashPart($span);
+                $$tag = ''; // $$tag stands for $em or $strong
+            }
+            $tree_char_em = false;
+        } else if ($token_len == 3) {
+            if ($em) {
+                // Reached closing marker for both em and strong.
+                // Closing strong marker:
+                for ($i = 0; $i < 2; ++$i) {
+                    $shifted_token = array_shift($token_stack);
+                    $tag = strlen($shifted_token) == 2 ? "strong" : "em";
+                    $span = array_shift($text_stack);
+                    $span = $this->runSpanGamut($span);
+                    $span = "<$tag>$span</$tag>";
+                    $text_stack[0] .= $this->hashPart($span);
+                    $$tag = ''; // $$tag stands for $em or $strong
+                }
+            } else {
+                // Reached opening three-char emphasis marker. Push on token 
+                // stack; will be handled by the special condition above.
+                $em = $token[0];
+                $strong = "$em$em";
+                array_unshift($token_stack, $token);
+                array_unshift($text_stack, '');
+                $tree_char_em = true;
+            }
+        } else if ($token_len == 2) {
+            if ($strong) {
+                // Unwind any dangling emphasis marker:
+                if (strlen($token_stack[0]) == 1) {
+                    $text_stack[1] .= array_shift($token_stack);
+                    $text_stack[0] .= array_shift($text_stack);
+                }
+                // Closing strong marker:
+                array_shift($token_stack);
+                $span = array_shift($text_stack);
+                $span = $this->runSpanGamut($span);
+                $span = "<strong>$span</strong>";
+                $text_stack[0] .= $this->hashPart($span);
+                $strong = '';
+            } else {
+                array_unshift($token_stack, $token);
+                array_unshift($text_stack, '');
+                $strong = $token;
+            }
+        } else {
+            // Here $token_len == 1
+            if ($em) {
+                if (strlen($token_stack[0]) == 1) {
+                    // Closing emphasis marker:
+                    array_shift($token_stack);
+                    $span = array_shift($text_stack);
+                    $span = $this->runSpanGamut($span);
+                    $span = "<em>$span</em>";
+                    $text_stack[0] .= $this->hashPart($span);
+                    $em = '';
+                } else {
+                    $text_stack[0] .= $token;
+                }
+            } else {
+                array_unshift($token_stack, $token);
+                array_unshift($text_stack, '');
+                $em = $token;
+            }
+        }
+    }
+    return $text_stack[0];
+}
 
 
 	function doBlockQuotes($text) {
@@ -1496,84 +1465,93 @@ class Markdown_Parser {
 	}
 
 
-	function parseSpan($str) {
-	#
-	# Take the string $str and parse it into tokens, hashing embeded HTML,
-	# escaped characters and handling code spans.
-	#
-		$output = '';
-		
-		$span_re = '{
-				(
-					\\\\'.$this->escape_chars_re.'
-				|
-					(?<![`\\\\])
-					`+						# code span marker
-			'.( $this->no_markup ? '' : '
-				|
-					<!--    .*?     -->		# comment
-				|
-					<\?.*?\?> | <%.*?%>		# processing instruction
-				|
-					<[/!$]?[-a-zA-Z0-9:_]+	# regular tags
-					(?>
-						\s
-						(?>[^"\'>]+|"[^"]*"|\'[^\']*\')*
-					)?
-					>
-			').'
-				)
-				}xs';
+function parseSpan($str) {
+    # Take the string $str and parse it into tokens, hashing embeded HTML,
+    # escaped characters and handling code spans.
+    
+    $output = '';
+    
+    # Define the regular expression pattern
+    $span_re = '{
+        (
+            \\\\'.$this->escape_chars_re.'
+        |
+            (?<![`\\\\])
+            `+                      # code span marker
+    '.( $this->no_markup ? '' : '
+        |
+            <!--    .*?     -->     # comment
+        |
+            <\?.*?\?> | <%.*?%>     # processing instruction
+        |
+            <[/!$]?[-a-zA-Z0-9:_]+  # regular tags
+            (?>
+                \s
+                (?>[^"\'>]+|"[^"]*"|\'[^\']*\')*
+            )?
+            >
+    ').'
+        )
+    }xs';
 
-		while (1) {
-			#
-			# Each loop iteration seach for either the next tag, the next 
-			# openning code span marker, or the next escaped character. 
-			# Each token is then passed to handleSpanToken.
-			#
-			$parts = preg_split($span_re, $str, 2, PREG_SPLIT_DELIM_CAPTURE);
-			
-			# Create token from text preceding tag.
-			if ($parts[0] != "") {
-				$output .= $parts[0];
-			}
-			
-			# Check if we reach the end.
-			if (isset($parts[1])) {
-				$output .= $this->handleSpanToken($parts[1], $parts[2]);
-				$str = $parts[2];
-			}
-			else {
-				break;
-			}
-		}
-		
-		return $output;
-	}
+    # Handle cases where $str is null or not a string
+    if (!is_string($str) || empty($str)) {
+        return '';
+    }
+
+    while (1) {
+        # Each loop iteration search for either the next tag, the next 
+        # opening code span marker, or the next escaped character. 
+        # Each token is then passed to handleSpanToken.
+        
+        $parts = preg_split($span_re, $str, 2, PREG_SPLIT_DELIM_CAPTURE);
+        
+        # Ensure parts array exists and has expected elements
+        if (!is_array($parts) || empty($parts)) {
+            break;
+        }
+
+        # Create token from text preceding tag.
+        if (isset($parts[0]) && $parts[0] !== "") {
+            $output .= $parts[0];
+        }
+        
+        # Check if we reach the end.
+        if (isset($parts[1])) {
+            $remainder = isset($parts[2]) ? $parts[2] : '';
+            $output .= $this->handleSpanToken($parts[1], $remainder);
+            $str = $remainder;
+        }
+        else {
+            break;
+        }
+    }
+    
+    return $output;
+}
 	
 	
-	function handleSpanToken($token, &$str) {
-	#
-	# Handle $token provided by parseSpan by determining its nature and 
-	# returning the corresponding value that should replace it.
-	#
-		switch ($token{0}) {
-			case "\\":
-				return $this->hashPart("&#". ord($token{1}). ";");
-			case "`":
-				# Search for end marker in remaining text.
-				if (preg_match('/^(.*?[^`])'.preg_quote($token).'(?!`)(.*)$/sm', 
-					$str, $matches))
-				{
-					$str = $matches[2];
-					$codespan = $this->makeCodeSpan($matches[1]);
-					return $this->hashPart($codespan);
-				}
-				return $token; // return as text since no ending marker found.
-			default:
-				return $this->hashPart($token);
-		}
-	}
+	function handleSpanToken($token, $str) {
+    # Handle $token provided by parseSpan by determining its nature and 
+    # returning the corresponding value that should replace it.
+    
+    switch ($token[0]) {
+        case "\\":
+            return $this->hashPart("&#". ord($token[1]). ";");
+        case "`":
+            # Search for end marker in remaining text.
+            if (preg_match('/^(.*?[^`])'.preg_quote($token).'(?!`)(.*)$/sm', 
+                $str, $matches))
+            {
+                $str = $matches[2];
+                $codespan = $this->makeCodeSpan($matches[1]);
+                return $this->hashPart($codespan);
+            }
+            return $token; // return as text since no ending marker found.
+        default:
+            return $this->hashPart($token);
+    }
+}
 
 
 	function outdent($text) {
